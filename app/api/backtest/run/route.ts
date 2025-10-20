@@ -41,8 +41,8 @@ export async function POST(request: Request) {
       symbolId: symbolRow.id!,
       timeframe: parsed.data.timeframe,
       params: parsed.data.params,
-      startedAt: now,
-      finishedAt: now,
+      startedAt: new Date(),
+      finishedAt: new Date(),
       summary
     })
     .returning();
