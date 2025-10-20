@@ -76,7 +76,7 @@ export async function fetchOHLCV(
     .map((row) => ({
       symbolId: symbolRow.id!,
       timeframe,
-      ts: Math.floor(parseISO(row.date).getTime() / 1000),
+      ts: parseISO(row.date),
       open: row.open,
       high: row.high,
       low: row.low,
@@ -117,16 +117,28 @@ export async function getCachedOHLCV(
 ) {
   const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.ticker, symbol) });
   if (!symbolRow) return [];
-  return db
+  const rows = await db
     .select()
     .from(prices)
     .where(
       and(
         eq(prices.symbolId, symbolRow.id!),
         eq(prices.timeframe, timeframe),
-        gte(prices.ts, from),
-        lte(prices.ts, to)
+        gte(prices.ts, new Date(from * 1000)),
+        lte(prices.ts, new Date(to * 1000))
       )
     )
     .orderBy(prices.ts);
+
+  return rows.map((r) => ({
+    id: r.id,
+    symbolId: r.symbolId,
+    timeframe: r.timeframe,
+    ts: Math.floor((r.ts as Date).getTime() / 1000),
+    open: r.open,
+    high: r.high,
+    low: r.low,
+    close: r.close,
+    volume: r.volume
+  }));
 }
