@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
 import { useWatchlist } from '@/lib/store/useWatchlist';
-import { useIndicators } from '@/lib/hooks/useIndicators';
+import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 
 export type Candle = {
   ts: number;
@@ -21,11 +21,6 @@ type Props = {
   initialCandles: Candle[];
 };
 
-type IndicatorRequest = {
-  name: IndicatorConfig['name'];
-  params: Record<string, number>;
-};
-
 export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }: Props) {
   const watchlist = useWatchlist();
   const [symbol, setSymbol] = useState(initialSymbol);
@@ -35,16 +30,44 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
   const [anchorIndex, setAnchorIndex] = useState<number>(Math.max(0, initialCandles.length - 50));
   const [newSymbol, setNewSymbol] = useState('');
 
-  const indicatorRequests: IndicatorRequest[] = useMemo(
-    () =>
-      indicators.map((config) => {
-        if (config.name === 'vwapAnchored') {
-          return { name: config.name, params: { ...config.params, anchorIndex } };
-        }
-        return { name: config.name, params: config.params };
-      }),
-    [indicators, anchorIndex]
-  );
+  const indicatorRequests = useMemo<IndicatorRequest[]>(() => {
+    return indicators.map((config) => {
+      switch (config.name) {
+        case 'ema':
+          return {
+            name: 'ema',
+            params: { period: config.params.period ?? 20 }
+          };
+        case 'rsi':
+          return {
+            name: 'rsi',
+            params: { period: config.params.period ?? 14 }
+          };
+        case 'macd':
+          return {
+            name: 'macd',
+            params: {
+              fast: config.params.fast ?? 12,
+              slow: config.params.slow ?? 26,
+              signal: config.params.signal ?? 9
+            }
+          };
+        case 'vwapAnchored':
+          return {
+            name: 'vwapAnchored',
+            params: { anchorIndex }
+          };
+        case 'supertrend':
+          return {
+            name: 'supertrend',
+            params: {
+              period: config.params.period ?? 10,
+              multiplier: config.params.multiplier ?? 3
+            }
+          };
+      }
+    });
+  }, [indicators, anchorIndex]);
 
   useIndicators(
     candles.map((c) => ({ ...c })),
