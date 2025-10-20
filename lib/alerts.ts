@@ -49,6 +49,7 @@ export async function evaluateAlerts() {
 
     const params = alert.params as unknown as Record<string, unknown>;
     const nowTs = Math.floor(Date.now() / 1000);
+    const lastTs = alert.lastTriggeredAt ? Math.floor((alert.lastTriggeredAt as Date).getTime() / 1000) : null;
 
     if (alert.type === 'price') {
       const operator = params.operator as string;
@@ -69,10 +70,10 @@ export async function evaluateAlerts() {
           triggered = value <= level;
           break;
       }
-      if (triggered && (!alert.lastTriggeredAt || nowTs - alert.lastTriggeredAt > 60)) {
+      if (triggered && (!lastTs || nowTs - lastTs > 60)) {
         await db
           .update(alerts)
-          .set({ lastTriggeredAt: nowTs })
+          .set({ lastTriggeredAt: new Date() })
           .where(eq(alerts.id, alert.id));
         const message = `Alerta ${alert.id} ${symbolRow.ticker} precio ${operator} ${level}`;
         writeLog(message);
@@ -103,10 +104,10 @@ export async function evaluateAlerts() {
           const fastEma = closes.slice(-fast - 1).reduce((a, b) => a + b, 0) / (fast + 1);
           const slowEma = closes.slice(-slow - 1).reduce((a, b) => a + b, 0) / (slow + 1);
           const crossed = fastEma > slowEma;
-          if (crossed && (!alert.lastTriggeredAt || nowTs - alert.lastTriggeredAt > 60)) {
+          if (crossed && (!lastTs || nowTs - lastTs > 60)) {
             await db
               .update(alerts)
-              .set({ lastTriggeredAt: nowTs })
+              .set({ lastTriggeredAt: new Date() })
               .where(eq(alerts.id, alert.id));
             const message = `Alerta indicador EMA cruzada ${symbolRow.ticker}`;
             writeLog(message);
@@ -170,11 +171,11 @@ export async function evaluateAlerts() {
           Number.isFinite(latestRsi) &&
           !Number.isNaN(latestRsi) &&
           latestRsi > threshold &&
-          (!alert.lastTriggeredAt || nowTs - alert.lastTriggeredAt > 60)
+          (!lastTs || nowTs - lastTs > 60)
         ) {
           await db
             .update(alerts)
-            .set({ lastTriggeredAt: nowTs })
+            .set({ lastTriggeredAt: new Date() })
             .where(eq(alerts.id, alert.id));
           const message = `Alerta RSI ${symbolRow.ticker} ${latestRsi.toFixed(2)} superó ${threshold}`;
           writeLog(message);

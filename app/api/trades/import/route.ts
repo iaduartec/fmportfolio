@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       side: row.side,
       qty: row.qty,
       price: row.price,
-      ts: Math.floor(new Date(row.ts).getTime() / 1000),
+      ts: new Date(row.ts),
       fees: row.fees
     });
   }

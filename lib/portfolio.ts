@@ -54,14 +54,14 @@ export async function recalcPositions() {
     if (existing) {
       await db
         .update(positions)
-        .set({ qty, avgPrice, updatedAt: Math.floor(Date.now() / 1000) })
+        .set({ qty, avgPrice, updatedAt: new Date() })
         .where(eq(positions.id, existing.id));
     } else {
       await db.insert(positions).values({
         symbolId: symbol.id!,
         qty,
         avgPrice,
-        updatedAt: Math.floor(Date.now() / 1000)
+        updatedAt: new Date()
       });
     }
   }
