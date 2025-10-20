@@ -1,0 +1,65 @@
+CREATE TABLE IF NOT EXISTS symbols (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticker TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  asset_class TEXT NOT NULL,
+  currency TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS prices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL REFERENCES symbols(id),
+  timeframe TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  open REAL NOT NULL,
+  high REAL NOT NULL,
+  low REAL NOT NULL,
+  close REAL NOT NULL,
+  volume REAL NOT NULL,
+  UNIQUE(symbol_id, timeframe, ts)
+);
+
+CREATE TABLE IF NOT EXISTS alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL REFERENCES symbols(id),
+  type TEXT NOT NULL,
+  params TEXT NOT NULL,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  last_triggered_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS trades (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL REFERENCES symbols(id),
+  side TEXT NOT NULL,
+  qty REAL NOT NULL,
+  price REAL NOT NULL,
+  ts INTEGER NOT NULL,
+  fees REAL NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS positions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL REFERENCES symbols(id),
+  qty REAL NOT NULL,
+  avg_price REAL NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cash_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  amount REAL NOT NULL,
+  note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS backtests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL REFERENCES symbols(id),
+  timeframe TEXT NOT NULL,
+  params TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  finished_at INTEGER NOT NULL,
+  summary TEXT NOT NULL
+);
