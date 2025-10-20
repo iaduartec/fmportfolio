@@ -1,0 +1,4 @@
+symbol,side,qty,price,ts,fees
+AAPL,buy,10,150,2023-01-02T14:30:00Z,1
+AAPL,sell,5,160,2023-02-05T14:30:00Z,1
+MSFT,buy,3,250,2023-03-10T14:30:00Z,0.5
