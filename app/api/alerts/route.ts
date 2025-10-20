@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       type: parsed.data.type,
       params: parsed.data.params,
       isActive: true,
-      createdAt: Math.floor(Date.now() / 1000)
+      createdAt: new Date()
     })
     .returning();
   return NextResponse.json(inserted[0]);
