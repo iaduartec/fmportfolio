@@ -15,7 +15,9 @@ export default async function AlertsPage() {
     type: alert.type,
     params: (alert.params ?? {}) as Record<string, unknown>,
     isActive: alert.isActive ? 1 : 0,
-    lastTriggeredAt: alert.lastTriggeredAt ?? null
+    lastTriggeredAt: alert.lastTriggeredAt
+      ? Math.floor((alert.lastTriggeredAt as Date).getTime() / 1000)
+      : null
   }));
 
   const tickers = symbolRows.map((symbol) => symbol.ticker);
