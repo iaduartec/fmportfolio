@@ -15,12 +15,36 @@ export async function recalcPositions() {
     let cost = 0;
 
     for (const trade of symbolTrades) {
-      const signedQty = trade.side === 'buy' ? trade.qty : -trade.qty;
-      const signedCost = trade.price * trade.qty + trade.fees;
-      qty += signedQty;
-      if (qty !== 0) {
-        cost += signedCost * Math.sign(signedQty);
-      } else {
+      const tradeQty = trade.qty;
+      const fees = trade.fees ?? 0;
+      const direction = trade.side === 'buy' ? 1 : -1;
+      let remainingQty = tradeQty;
+      let remainingFees = fees;
+
+      if (qty !== 0 && Math.sign(qty) !== direction) {
+        const positionSign = Math.sign(qty);
+        const closingQty = Math.min(remainingQty, Math.abs(qty));
+        if (closingQty > 0) {
+          const avgCost = cost / qty;
+          cost -= avgCost * closingQty * positionSign;
+          qty -= closingQty * positionSign;
+          if (fees > 0) {
+            const feePortion = (fees * closingQty) / tradeQty;
+            remainingFees = Math.max(0, remainingFees - feePortion);
+          }
+          remainingQty -= closingQty;
+        }
+      }
+
+      if (remainingQty > 0) {
+        const costContribution = (trade.price * remainingQty + remainingFees) * direction;
+        qty += remainingQty * direction;
+        cost += costContribution;
+        remainingFees = 0;
+      }
+
+      if (Math.abs(qty) < 1e-9) {
+        qty = 0;
         cost = 0;
       }
     }

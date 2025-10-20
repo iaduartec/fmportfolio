@@ -5,6 +5,7 @@ import { db } from './db';
 import { alerts, prices, symbols } from '../drizzle/schema';
 import { fetchOHLCV } from './adapters/fmp';
 import { sendAlert } from './ws';
+import { rsi } from './indicators';
 
 const logPath = path.resolve(process.cwd(), 'alerts.log');
 
@@ -118,12 +119,64 @@ export async function evaluateAlerts() {
       }
       if (indicator === 'rsi_threshold') {
         const threshold = Number(params.threshold ?? 70);
-        if (bar.close > threshold && (!alert.lastTriggeredAt || nowTs - alert.lastTriggeredAt > 60)) {
+        const period = Number(params.period ?? 14);
+        const limit = Math.max(period + 5, period * 2);
+
+        let closes: number[] = [];
+        const storedBars = await db
+          .select()
+          .from(prices)
+          .where(eq(prices.symbolId, alert.symbolId))
+          .orderBy(desc(prices.ts))
+          .limit(limit);
+
+        if (storedBars.length >= period + 1) {
+          closes = storedBars.reverse().map((candle) => Number(candle.close));
+        }
+
+        if (closes.length < period + 1) {
+          try {
+            const now = new Date();
+            const lookbackDays = Math.max(period + 10, 30);
+            const past = new Date(now.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
+            const fetched = await fetchOHLCV(
+              symbolRow.ticker,
+              '1D',
+              past.toISOString().slice(0, 10),
+              now.toISOString().slice(0, 10)
+            );
+            if (fetched.length >= period + 1) {
+              closes = fetched.map((candle) => Number(candle.close));
+            }
+          } catch (error) {
+            writeLog(`[Inferencia] Error calculando RSI para alerta ${alert.id}: ${String(error)}`);
+            continue;
+          }
+        }
+
+        if (closes.length < period + 1) {
+          writeLog(
+            `[Inferencia] Datos insuficientes para RSI alerta ${alert.id}, se requieren al menos ${
+              period + 1
+            } cierres`
+          );
+          continue;
+        }
+
+        const rsiSeries = rsi(closes, period);
+        const latestRsi = rsiSeries[rsiSeries.length - 1];
+
+        if (
+          Number.isFinite(latestRsi) &&
+          !Number.isNaN(latestRsi) &&
+          latestRsi > threshold &&
+          (!alert.lastTriggeredAt || nowTs - alert.lastTriggeredAt > 60)
+        ) {
           await db
             .update(alerts)
             .set({ lastTriggeredAt: nowTs })
             .where(eq(alerts.id, alert.id));
-          const message = `Alerta RSI ${symbolRow.ticker} superó ${threshold}`;
+          const message = `Alerta RSI ${symbolRow.ticker} ${latestRsi.toFixed(2)} superó ${threshold}`;
           writeLog(message);
           sendAlert({
             type: 'alert',
