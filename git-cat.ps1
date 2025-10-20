@@ -1,1 +1,1 @@
-param([string]`$hash)
+param([string]$hash)
