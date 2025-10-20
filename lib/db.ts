@@ -4,6 +4,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import path from 'path';
 import fs from 'fs';
 import { config } from './config';
+import * as schema from '../drizzle/schema';
 
 const databaseFile = path.resolve(process.cwd(), config.dbPath);
 
@@ -12,7 +13,7 @@ if (!fs.existsSync(path.dirname(databaseFile))) {
 }
 
 export const sqlite = new Database(databaseFile);
-export const db = drizzle(sqlite);
+export const db = drizzle(sqlite, { schema });
 
 export async function runMigrations() {
   migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle/migrations') });
