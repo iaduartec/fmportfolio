@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { ema, rsi, macd, vwapAnchored, supertrend } from '@/lib/indicators';
 
-type IndicatorRequest =
+export type IndicatorRequest =
   | { name: 'ema'; params: { period: number } }
   | { name: 'rsi'; params: { period: number } }
   | { name: 'macd'; params: { fast: number; slow: number; signal: number } }
