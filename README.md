@@ -80,11 +80,7 @@ Registra alertas en consola y en `alerts.log`.
 ## Importación de operaciones
 
 Ejemplo de CSV disponible en `scripts/import_trades_example.csv` con columnas:
-
-```
 symbol,side,qty,price,ts,fees
-```
-
 Sube el archivo vía `POST /api/trades/import` (cuerpo en texto plano) para actualizar operaciones y posiciones.
 
 ## Tests
