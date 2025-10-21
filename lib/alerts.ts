@@ -47,9 +47,14 @@ export async function evaluateAlerts() {
 
     if (!bar) continue;
 
-    const params = alert.params as unknown as Record<string, unknown>;
+    const params = alert.params as Record<string, unknown>;
     const nowTs = Math.floor(Date.now() / 1000);
-    const lastTs = alert.lastTriggeredAt ? Math.floor((alert.lastTriggeredAt as Date).getTime() / 1000) : null;
+    const lastTs =
+      alert.lastTriggeredAt instanceof Date
+        ? Math.floor(alert.lastTriggeredAt.getTime() / 1000)
+        : typeof alert.lastTriggeredAt === 'number'
+        ? Math.floor(alert.lastTriggeredAt)
+        : null;
 
     if (alert.type === 'price') {
       const operator = params.operator as string;
