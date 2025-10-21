@@ -93,6 +93,22 @@ npm test
 
 Los indicadores mantienen >=80% de cobertura en `lib/indicators`.
 
+## Despliegue local con Vercel CLI
+
+Instala la CLI de Vercel para simular el build de producción de la plataforma:
+
+```bash
+npm install --save-dev @vercel/cli
+```
+
+Luego ejecuta el build local equivalente al despliegue con:
+
+```bash
+npm run vercel:build
+```
+
+> [No verificado] En entornos sin acceso al registro de npm puede ser necesario configurar un mirror autorizado o instalar la CLI de manera global antes de correr el comando.
+
 ## Notas de seguridad
 
 - Mantén tu `.env` fuera de control de versiones.
