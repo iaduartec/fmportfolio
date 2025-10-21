@@ -1,6 +1,10 @@
+const defaultDbPath =
+  process.env.DATABASE_URL ??
+  (process.env.VERCEL || process.env.AWS_REGION ? '/tmp/fmportfolio.db' : 'fmportfolio.db');
+
 export const config = {
   fmpApiKey: process.env.FMP_API_KEY ?? '',
-  dbPath: process.env.DATABASE_URL ?? 'fmportfolio.db',
+  dbPath: defaultDbPath,
   rateLimitPerMinute: 60
 };
 
