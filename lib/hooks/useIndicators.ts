@@ -14,7 +14,7 @@ type Candle = { open: number; high: number; low: number; close: number; volume: 
 
 type Result = Record<string, unknown>;
 
-export function useIndicators(candles: Candle[], requests: IndicatorRequest[], _useWorker = false) {
+export function useIndicators(candles: Candle[], requests: IndicatorRequest[]) {
   return useMemo(() => {
     const closes = candles.map((c) => c.close);
     const values: Result = {};
