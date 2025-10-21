@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
+import { IndicatorSummary } from '@/components/IndicatorSummary';
 import { useWatchlist } from '@/lib/store/useWatchlist';
 import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 
@@ -31,46 +32,55 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
   const [newSymbol, setNewSymbol] = useState('');
 
   const indicatorRequests = useMemo<IndicatorRequest[]>(() => {
-    return indicators.map((config) => {
-      switch (config.name) {
-        case 'ema':
-          return {
-            name: 'ema',
-            params: { period: config.params.period ?? 20 }
-          };
-        case 'rsi':
-          return {
-            name: 'rsi',
-            params: { period: config.params.period ?? 14 }
-          };
-        case 'macd':
-          return {
-            name: 'macd',
-            params: {
-              fast: config.params.fast ?? 12,
-              slow: config.params.slow ?? 26,
-              signal: config.params.signal ?? 9
-            }
-          };
-        case 'vwapAnchored':
-          return {
-            name: 'vwapAnchored',
-            params: { anchorIndex }
-          };
-        case 'supertrend':
-          return {
-            name: 'supertrend',
-            params: {
-              period: config.params.period ?? 10,
-              multiplier: config.params.multiplier ?? 3
-            }
-          };
-      }
-    });
+    return indicators
+      .map((config) => {
+        switch (config.name) {
+          case 'ema':
+            return {
+              id: config.id,
+              name: 'ema',
+              params: { period: config.params.period ?? 20 }
+            } satisfies IndicatorRequest;
+          case 'rsi':
+            return {
+              id: config.id,
+              name: 'rsi',
+              params: { period: config.params.period ?? 14 }
+            } satisfies IndicatorRequest;
+          case 'macd':
+            return {
+              id: config.id,
+              name: 'macd',
+              params: {
+                fast: config.params.fast ?? 12,
+                slow: config.params.slow ?? 26,
+                signal: config.params.signal ?? 9
+              }
+            } satisfies IndicatorRequest;
+          case 'vwapAnchored':
+            return {
+              id: config.id,
+              name: 'vwapAnchored',
+              params: { anchorIndex }
+            } satisfies IndicatorRequest;
+          case 'supertrend':
+            return {
+              id: config.id,
+              name: 'supertrend',
+              params: {
+                period: config.params.period ?? 10,
+                multiplier: config.params.multiplier ?? 3
+              }
+            } satisfies IndicatorRequest;
+          default:
+            return undefined;
+        }
+      })
+      .filter((request): request is IndicatorRequest => Boolean(request));
   }, [indicators, anchorIndex]);
 
-  useIndicators(
-    candles.map((c) => ({ ...c })),
+  const indicatorValues = useIndicators(
+    candles.map((candle) => ({ ...candle })),
     indicatorRequests
   );
 
@@ -149,6 +159,7 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
       </div>
       <div className="space-y-4">
         <IndicatorPanel indicators={indicators} onChange={setIndicators} />
+        <IndicatorSummary indicators={indicators} values={indicatorValues} />
         <div>
           <h3 className="text-sm font-semibold uppercase text-slate-400">Watchlist</h3>
           <form onSubmit={handleAddSymbol} className="mt-2 flex gap-2 text-sm">

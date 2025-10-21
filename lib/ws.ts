@@ -1,4 +1,5 @@
 import { WebSocketServer } from 'ws';
+import type { WebSocket } from 'ws';
 import http from 'http';
 
 export type AlertPayload = {
@@ -21,7 +22,7 @@ export function getWebSocketServer(server: http.Server) {
         socket.destroy();
         return;
       }
-      wss?.handleUpgrade(request, socket, head, (ws) => {
+      wss?.handleUpgrade(request, socket, head, (ws: WebSocket) => {
         wss?.emit('connection', ws, request);
       });
     });

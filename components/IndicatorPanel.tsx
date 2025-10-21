@@ -26,7 +26,8 @@ export function IndicatorPanel({ indicators, onChange }: Props) {
 
   const handleAdd = () => {
     const id = `${selected}-${Date.now()}`;
-    onChange([...indicators, { id, name: selected, params: indicatorDefaults[selected] }]);
+    const defaults = indicatorDefaults[selected];
+    onChange([...indicators, { id, name: selected, params: { ...defaults } }]);
   };
 
   const handleParamChange = (id: string, key: string, value: number) => {
