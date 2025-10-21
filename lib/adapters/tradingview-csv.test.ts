@@ -32,7 +32,7 @@ describe('parseTradingViewCsv', () => {
     expect(candles[1].ts.toISOString()).toBe('2025-08-12T10:05:00.000Z');
   });
 
-  it('lanza error con CSV inv�lido', () => {
+  it('lanza error con CSV invalido', () => {
     expect(() => parseTradingViewCsv('time,open\ninvalid,data')).toThrow(TradingViewCsvError);
   });
 });

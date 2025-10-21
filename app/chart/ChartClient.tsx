@@ -8,6 +8,7 @@ import { ImportPricesForm } from '@/components/ImportPricesForm';
 import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 import { useWatchlist } from '@/lib/store/useWatchlist';
 import { formatAsUtcDateString } from '@/lib/utils/dates';
+import { generateMockOHLCV } from '@/lib/adapters/mock';
 
 export type Candle = {
   ts: number;
@@ -86,51 +87,71 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
     indicatorRequests
   );
 
-  const loadCandles = useCallback(async (targetSymbol: string, targetTimeframe: string) => {
-    const to = new Date();
-    const from = new Date(to.getTime() - 1000 * 60 * 60 * 24 * 60);
+  const loadCandles = useCallback(
+    async (targetSymbol: string, targetTimeframe: string) => {
+      const to = new Date();
+      const from = new Date(to.getTime() - 1000 * 60 * 60 * 24 * 60);
 
-    const searchParams = new URLSearchParams({
-      symbol: targetSymbol,
-      timeframe: targetTimeframe,
-      from: from.toISOString(),
-      to: to.toISOString()
-    });
+      const searchParams = new URLSearchParams({
+        symbol: targetSymbol,
+        timeframe: targetTimeframe,
+        from: from.toISOString(),
+        to: to.toISOString()
+      });
 
-    const fetchCandles = async () => {
-      const response = await fetch(`/api/quotes?${searchParams.toString()}`);
-      if (!response.ok) {
-        throw new Error('No se pudieron obtener velas');
-      }
-      return (await response.json()) as Candle[];
-    };
-
-    try {
-      let fetchedCandles = await fetchCandles();
-
-      if (fetchedCandles.length === 0) {
-        // [Inferencia] Llenamos la caché con datos recientes de FMP cuando aún no hay velas locales.
-        const refreshResponse = await fetch('/api/symbols/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: targetSymbol,
-            timeframe: targetTimeframe,
-            start: formatAsUtcDateString(from),
-            end: formatAsUtcDateString(to)
-          })
-        });
-
-        if (refreshResponse.ok) {
-          fetchedCandles = await fetchCandles();
+      const fetchCandles = async () => {
+        const response = await fetch(`/api/quotes?${searchParams.toString()}`);
+        if (!response.ok) {
+          throw new Error('No se pudieron obtener velas');
         }
-      }
+        return (await response.json()) as Candle[];
+      };
 
-      setCandles(fetchedCandles.map((candle) => ({ ...candle })));
-    } catch (error) {
-      console.error('Error cargando velas', error);
-    }
-  }, []);
+      const applyMockData = () => {
+        const mocked = generateMockOHLCV(150).map((candle) => ({
+          ts: Math.floor(candle.ts),
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume
+        }));
+        setCandles(mocked);
+      };
+
+      try {
+        let fetchedCandles = await fetchCandles();
+
+        if (fetchedCandles.length === 0) {
+          // [Inferencia] Intentamos llenar la cache con datos recientes de FMP cuando aun no hay velas locales.
+          const refreshResponse = await fetch('/api/symbols/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: targetSymbol,
+              timeframe: targetTimeframe,
+              start: formatAsUtcDateString(from),
+              end: formatAsUtcDateString(to)
+            })
+          });
+
+          if (refreshResponse.ok) {
+            fetchedCandles = await fetchCandles();
+          }
+        }
+
+        if (fetchedCandles.length === 0) {
+          applyMockData();
+        } else {
+          setCandles(fetchedCandles.map((candle) => ({ ...candle })));
+        }
+      } catch (error) {
+        console.error('Error cargando velas', error);
+        applyMockData();
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     loadCandles(symbol, timeframe);
@@ -168,7 +189,7 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm">
             <label className="flex flex-col gap-1">
-              <span className="text-xs uppercase text-slate-400">Símbolo</span>
+              <span className="text-xs uppercase text-slate-400">Simbolo</span>
               <select
                 value={symbol}
                 onChange={(event) => setSymbol(event.target.value)}
@@ -219,17 +240,14 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
               className="flex-1 rounded bg-slate-800 px-2 py-1"
             />
             <button type="submit" className="rounded bg-blue-600 px-3 py-1 hover:bg-blue-500">
-              Añadir
+              Anadir
             </button>
           </form>
           <ul className="mt-2 space-y-1 text-sm">
             {watchlist.items.map((item) => (
               <li key={item.symbol} className="flex items-center justify-between rounded bg-slate-800 px-2 py-1">
                 <span>{item.symbol}</span>
-                <button
-                  onClick={() => watchlist.remove(item.symbol)}
-                  className="text-xs text-red-400 hover:underline"
-                >
+                <button onClick={() => watchlist.remove(item.symbol)} className="text-xs text-red-400 hover:underline">
                   Quitar
                 </button>
               </li>
