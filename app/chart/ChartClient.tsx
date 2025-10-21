@@ -8,7 +8,6 @@ import { ImportPricesForm } from '@/components/ImportPricesForm';
 import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 import { useWatchlist } from '@/lib/store/useWatchlist';
 import { formatAsUtcDateString } from '@/lib/utils/dates';
-import { generateMockOHLCV } from '@/lib/adapters/mock';
 
 export type Candle = {
   ts: number;
@@ -33,6 +32,7 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
   const [indicators, setIndicators] = useState<IndicatorConfig[]>([]);
   const [anchorIndex, setAnchorIndex] = useState<number>(Math.max(0, initialCandles.length - 50));
   const [newSymbol, setNewSymbol] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const indicatorRequests = useMemo<IndicatorRequest[]>(() => {
     return indicators
@@ -107,18 +107,6 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
         return (await response.json()) as Candle[];
       };
 
-      const applyMockData = () => {
-        const mocked = generateMockOHLCV(150).map((candle) => ({
-          ts: Math.floor(candle.ts),
-          open: candle.open,
-          high: candle.high,
-          low: candle.low,
-          close: candle.close,
-          volume: candle.volume
-        }));
-        setCandles(mocked);
-      };
-
       try {
         let fetchedCandles = await fetchCandles();
 
@@ -135,19 +123,22 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
             })
           });
 
-          if (refreshResponse.ok) {
-            fetchedCandles = await fetchCandles();
-          }
+        if (refreshResponse.ok) {
+          fetchedCandles = await fetchCandles();
+        }
         }
 
         if (fetchedCandles.length === 0) {
-          applyMockData();
+          setCandles([]);
+          setLoadError('No se encontraron velas para el simbolo y timeframe seleccionados.');
         } else {
+          setLoadError(null);
           setCandles(fetchedCandles.map((candle) => ({ ...candle })));
         }
       } catch (error) {
         console.error('Error cargando velas', error);
-        applyMockData();
+        setCandles([]);
+        setLoadError('No se pudieron cargar velas. Revisa la conexion o importa datos.');
       }
     },
     []
@@ -225,7 +216,14 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
             />
           </div>
         </div>
-        <Chart data={chartData} />
+        <div className="space-y-2">
+          <Chart data={chartData} />
+          {loadError ? (
+            <p className="text-xs text-red-400">{loadError}</p>
+          ) : (
+            <p className="text-xs text-slate-500">Mostrando {candles.length} velas.</p>
+          )}
+        </div>
       </div>
       <div className="space-y-4">
         <IndicatorPanel indicators={indicators} onChange={setIndicators} />
