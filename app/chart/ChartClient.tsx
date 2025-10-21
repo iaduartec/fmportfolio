@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
 import { IndicatorSummary } from '@/components/IndicatorSummary';
 import { useWatchlist } from '@/lib/store/useWatchlist';
 import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
+import { ImportPricesForm } from '@/components/ImportPricesForm';
 
 export type Candle = {
   ts: number;
@@ -84,18 +85,22 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
     indicatorRequests
   );
 
-  useEffect(() => {
-    async function fetchCandles() {
-      const to = new Date();
-      const from = new Date(to.getTime() - 1000 * 60 * 60 * 24 * 60);
-      const res = await fetch(
-        `/api/quotes?symbol=${symbol}&timeframe=${timeframe}&from=${from.toISOString()}&to=${to.toISOString()}`
-      );
-      const json = await res.json();
-      setCandles(json.map((c: Candle) => ({ ...c })));
+  const loadCandles = useCallback(async (targetSymbol: string, targetTimeframe: string) => {
+    const to = new Date();
+    const from = new Date(to.getTime() - 1000 * 60 * 60 * 24 * 60);
+    const res = await fetch(
+      `/api/quotes?symbol=${targetSymbol}&timeframe=${targetTimeframe}&from=${from.toISOString()}&to=${to.toISOString()}`
+    );
+    if (!res.ok) {
+      return;
     }
-    fetchCandles();
-  }, [symbol, timeframe]);
+    const json = await res.json();
+    setCandles(json.map((c: Candle) => ({ ...c })));
+  }, []);
+
+  useEffect(() => {
+    loadCandles(symbol, timeframe);
+  }, [symbol, timeframe, loadCandles]);
 
   const chartData = candles.map((candle) => ({
     time: candle.ts,
@@ -111,6 +116,16 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
     if (!newSymbol) return;
     watchlist.add({ symbol: newSymbol.toUpperCase() });
     setNewSymbol('');
+  };
+
+  const handleImportCompleted = (payload: { symbol: string; timeframe: string; imported: number }) => {
+    const normalizedSymbol = payload.symbol.toUpperCase();
+    if (!watchlist.items.some((item) => item.symbol === normalizedSymbol)) {
+      watchlist.add({ symbol: normalizedSymbol });
+    }
+    setSymbol(normalizedSymbol);
+    setTimeframe(payload.timeframe);
+    void loadCandles(normalizedSymbol, payload.timeframe);
   };
 
   return (
@@ -187,6 +202,13 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
             ))}
           </ul>
         </div>
+        <ImportPricesForm
+          symbol={symbol}
+          timeframe={timeframe}
+          onImported={({ symbol: importedSymbol, timeframe: importedTimeframe, imported }) =>
+            handleImportCompleted({ symbol: importedSymbol, timeframe: importedTimeframe, imported })
+          }
+        />
       </div>
     </div>
   );
