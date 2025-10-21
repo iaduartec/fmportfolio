@@ -17,37 +17,74 @@ export function Chart({ data }: Props) {
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    if (!chartRef.current) {
-      chartRef.current = createChart(containerRef.current, {
-        layout: { background: { color: '#0f172a' }, textColor: '#e2e8f0' },
-        width: containerRef.current.clientWidth,
-        height: 400
+    const container = containerRef.current;
+    if (!container) return;
+
+    const getWidth = () => container.clientWidth || container.getBoundingClientRect().width || 0;
+    const getHeight = () => container.clientHeight || 400;
+
+    const chart = createChart(container, {
+      layout: { background: { color: '#0f172a' }, textColor: '#e2e8f0' },
+      width: getWidth(),
+      height: getHeight()
+    });
+
+    chartRef.current = chart;
+    seriesRef.current = chart.addCandlestickSeries();
+
+    const updateSize = () => {
+      if (!chartRef.current) return;
+      const width = getWidth();
+      const height = getHeight();
+      if (width > 0) {
+        chartRef.current.applyOptions({ width, height });
+      }
+    };
+
+    let resizeObserver: ResizeObserver | undefined;
+    let cleanupWindow: (() => void) | undefined;
+
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        updateSize();
+        chart.timeScale().fitContent();
       });
-      seriesRef.current = chartRef.current.addCandlestickSeries();
+      resizeObserver.observe(container);
+    } else {
+      const handleResize = () => {
+        updateSize();
+        chart.timeScale().fitContent();
+      };
+      window.addEventListener('resize', handleResize);
+      cleanupWindow = () => window.removeEventListener('resize', handleResize);
     }
 
-    const chart = chartRef.current;
-    function handleResize() {
-      if (!containerRef.current || !chart) return;
-      chart.applyOptions({ width: containerRef.current.clientWidth });
-    }
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    requestAnimationFrame(() => {
+      updateSize();
+      chart.timeScale().fitContent();
+    });
+
+    return () => {
+      resizeObserver?.disconnect();
+      cleanupWindow?.();
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
     if (!seriesRef.current) return;
-    seriesRef.current.setData(
-      data.map((bar) => ({
-        time: toUtcTimestamp(bar.time),
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close
-      }))
-    );
+    const nextData = data.map((bar) => ({
+      time: toUtcTimestamp(bar.time),
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close
+    }));
+    seriesRef.current.setData(nextData);
+    chartRef.current?.timeScale().fitContent();
   }, [data]);
 
-  return <div ref={containerRef} className="h-[400px] w-full" aria-label="Gráfico de velas" />;
+  return <div ref={containerRef} className="h-[400px] w-full" aria-label="Grafico de velas" />;
 }
