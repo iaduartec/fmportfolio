@@ -7,3 +7,4 @@ out
 coverage
 /dist-scripts
 tsconfig.tsbuildinfo
+.vercel
