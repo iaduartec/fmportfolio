@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
+    "vercel:build": "vercel build --yes",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:seed": "ts-node --project tsconfig.scripts.json scripts/seed.ts",
