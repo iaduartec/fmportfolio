@@ -1,3 +1,6 @@
 {
-  "chatgpt.openOnStartup": true
+  "chatgpt.openOnStartup": true,
+  "nxConsole.generateAiAgentRules": true,
+  "codex.apiKey": "sk-svcacct-SV_tJPNMmG3IxHP-viIF2BwkpTtVgp-lRuZySTpoh1jD8ZvVeRlI1F6DzVys8WPeGGQPtzMXP4T3Blbk",
+  "codex.completionEngineEnabled": true
 }
