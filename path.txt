@@ -1,0 +1,1 @@
+C:\coding\fmportfolio\node_modules\.bin;C:\Users\kiri_\AppData\Local\nvm\v22.13.1;C:\Windows\System32;C:\Windows
