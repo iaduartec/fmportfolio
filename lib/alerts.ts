@@ -20,6 +20,15 @@ export async function evaluateAlerts() {
     const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.id, alert.symbolId) });
     if (!symbolRow) continue;
 
+    type PriceBar = {
+      ts: Date | number;
+      open: number;
+      high: number;
+      low: number;
+      close: number;
+      volume: number;
+    };
+
     const latestPrice = await db
       .select()
       .from(prices)
@@ -27,7 +36,7 @@ export async function evaluateAlerts() {
       .orderBy(desc(prices.ts))
       .limit(1);
 
-    let bar = latestPrice[0];
+    let bar: PriceBar | undefined = latestPrice[0];
     if (!bar) {
       try {
         const now = new Date();
