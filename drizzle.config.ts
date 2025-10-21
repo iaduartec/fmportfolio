@@ -1,11 +1,16 @@
 import { config } from './lib/config';
-import { defineConfig } from 'drizzle-kit';
+import type { Config } from 'drizzle-kit';
 
-export default defineConfig({
+const drizzleConfig = {
   schema: './drizzle/schema.ts',
   out: './drizzle/migrations',
-  dialect: 'sqlite',
+  driver: 'better-sqlite',
   dbCredentials: {
     url: config.dbPath
   }
-});
+} satisfies Config & {
+  driver: 'better-sqlite';
+  dbCredentials: { url: string };
+};
+
+export default drizzleConfig;
