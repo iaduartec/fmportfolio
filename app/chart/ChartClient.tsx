@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
 import { IndicatorSummary } from '@/components/IndicatorSummary';
-import { useWatchlist } from '@/lib/store/useWatchlist';
-import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 import { ImportPricesForm } from '@/components/ImportPricesForm';
+import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
+import { useWatchlist } from '@/lib/store/useWatchlist';
+import { formatAsUtcDateString } from '@/lib/utils/dates';
 
 export type Candle = {
   ts: number;
@@ -88,14 +89,47 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
   const loadCandles = useCallback(async (targetSymbol: string, targetTimeframe: string) => {
     const to = new Date();
     const from = new Date(to.getTime() - 1000 * 60 * 60 * 24 * 60);
-    const res = await fetch(
-      `/api/quotes?symbol=${targetSymbol}&timeframe=${targetTimeframe}&from=${from.toISOString()}&to=${to.toISOString()}`
-    );
-    if (!res.ok) {
-      return;
+
+    const searchParams = new URLSearchParams({
+      symbol: targetSymbol,
+      timeframe: targetTimeframe,
+      from: from.toISOString(),
+      to: to.toISOString()
+    });
+
+    const fetchCandles = async () => {
+      const response = await fetch(`/api/quotes?${searchParams.toString()}`);
+      if (!response.ok) {
+        throw new Error('No se pudieron obtener velas');
+      }
+      return (await response.json()) as Candle[];
+    };
+
+    try {
+      let fetchedCandles = await fetchCandles();
+
+      if (fetchedCandles.length === 0) {
+        // [Inferencia] Llenamos la caché con datos recientes de FMP cuando aún no hay velas locales.
+        const refreshResponse = await fetch('/api/symbols/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: targetSymbol,
+            timeframe: targetTimeframe,
+            start: formatAsUtcDateString(from),
+            end: formatAsUtcDateString(to)
+          })
+        });
+
+        if (refreshResponse.ok) {
+          fetchedCandles = await fetchCandles();
+        }
+      }
+
+      setCandles(fetchedCandles.map((candle) => ({ ...candle })));
+    } catch (error) {
+      console.error('Error cargando velas', error);
     }
-    const json = await res.json();
-    setCandles(json.map((c: Candle) => ({ ...c })));
   }, []);
 
   useEffect(() => {
