@@ -1,3 +1,4 @@
+import type { RunResult } from 'better-sqlite3';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       volume: candle.volume
     }));
 
-    const result = await db
+    const result: RunResult = await db
       .insert(prices)
       .values(values)
       .onConflictDoUpdate({
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       imported: values.length,
-      updated: result.rowsAffected ?? values.length,
+      updated: result.changes,
       symbol: symbolTicker,
       timeframe
     });
