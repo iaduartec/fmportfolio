@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi, type UTCTimestamp } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { normalizeCandles, type ChartCandle } from '@/lib/chart/transformers';
 
-type Candle = { time: number; open: number; high: number; low: number; close: number; volume: number };
+type Candle = ChartCandle;
 
 type Props = {
   data: Candle[];
 };
-
-const toUtcTimestamp = (value: number): UTCTimestamp => Math.floor(value) as UTCTimestamp;
 
 export function Chart({ data }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -75,13 +74,7 @@ export function Chart({ data }: Props) {
 
   useEffect(() => {
     if (!seriesRef.current) return;
-    const nextData = data.map((bar) => ({
-      time: toUtcTimestamp(bar.time),
-      open: bar.open,
-      high: bar.high,
-      low: bar.low,
-      close: bar.close
-    }));
+    const nextData = normalizeCandles(data);
     seriesRef.current.setData(nextData);
     chartRef.current?.timeScale().fitContent();
   }, [data]);
