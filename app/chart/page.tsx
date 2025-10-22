@@ -7,7 +7,8 @@ import { ChartClient } from './ChartClient';
 export const dynamic = 'force-dynamic';
 
 export default async function ChartPage() {
-  const defaultSymbol = 'AAPL';
+  const defaultSymbol = 'SPY';
+  const defaultTimeframe = '1D';
   const db = await getDb();
   const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.ticker, defaultSymbol) });
   const initialCandles = symbolRow
@@ -30,6 +31,12 @@ export default async function ChartPage() {
     }));
 
   return (
-    <ChartClient initialSymbol={defaultSymbol} initialTimeframe="1D" initialCandles={chartCandles} />
+    <ChartClient
+      initialSymbol={defaultSymbol}
+      initialTimeframe={defaultTimeframe}
+      initialCandles={chartCandles}
+      fallbackSymbol={defaultSymbol}
+      fallbackTimeframe={defaultTimeframe}
+    />
   );
 }
