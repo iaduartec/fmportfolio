@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
 import { IndicatorSummary } from '@/components/IndicatorSummary';
-import { ImportPricesForm } from '@/components/ImportPricesForm';
 import { useIndicators, type IndicatorRequest } from '@/lib/hooks/useIndicators';
 import { useWatchlist } from '@/lib/store/useWatchlist';
 import { formatAsUtcDateString } from '@/lib/utils/dates';
@@ -34,14 +33,23 @@ export function ChartClient({
   fallbackTimeframe
 }: Props) {
   const watchlist = useWatchlist();
+  const availableSymbols = useMemo(
+    () => watchlist.items.map((item) => item.symbol),
+    [watchlist.items]
+  );
   const [symbol, setSymbol] = useState(initialSymbol);
   const [timeframe, setTimeframe] = useState(initialTimeframe);
   const [candles, setCandles] = useState<Candle[]>(initialCandles);
   const [indicators, setIndicators] = useState<IndicatorConfig[]>([]);
   const [anchorIndex, setAnchorIndex] = useState<number>(Math.max(0, initialCandles.length - 50));
-  const [newSymbol, setNewSymbol] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const fallbackAttemptedRef = useRef(false);
+  const dropdownSymbols = useMemo(() => {
+    if (availableSymbols.includes(symbol)) {
+      return availableSymbols;
+    }
+    return [symbol, ...availableSymbols];
+  }, [availableSymbols, symbol]);
 
   const indicatorRequests = useMemo<IndicatorRequest[]>(() => {
     return indicators
@@ -182,23 +190,6 @@ export function ChartClient({
     volume: candle.volume
   }));
 
-  const handleAddSymbol = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!newSymbol) return;
-    watchlist.add({ symbol: newSymbol.toUpperCase() });
-    setNewSymbol('');
-  };
-
-  const handleImportCompleted = (payload: { symbol: string; timeframe: string; imported: number }) => {
-    const normalizedSymbol = payload.symbol.toUpperCase();
-    if (!watchlist.items.some((item) => item.symbol === normalizedSymbol)) {
-      watchlist.add({ symbol: normalizedSymbol });
-    }
-    setSymbol(normalizedSymbol);
-    setTimeframe(payload.timeframe);
-    void loadCandles(normalizedSymbol, payload.timeframe);
-  };
-
   return (
     <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
       <div>
@@ -211,8 +202,8 @@ export function ChartClient({
                 onChange={(event) => setSymbol(event.target.value)}
                 className="rounded bg-slate-800 px-2 py-1"
               >
-                {watchlist.items.map((item) => (
-                  <option key={item.symbol}>{item.symbol}</option>
+                {dropdownSymbols.map((ticker) => (
+                  <option key={ticker}>{ticker}</option>
                 ))}
               </select>
             </label>
@@ -253,37 +244,6 @@ export function ChartClient({
       <div className="space-y-4">
         <IndicatorPanel indicators={indicators} onChange={setIndicators} />
         <IndicatorSummary indicators={indicators} values={indicatorValues} />
-        <div>
-          <h3 className="text-sm font-semibold uppercase text-slate-400">Watchlist</h3>
-          <form onSubmit={handleAddSymbol} className="mt-2 flex gap-2 text-sm">
-            <input
-              value={newSymbol}
-              onChange={(event) => setNewSymbol(event.target.value)}
-              placeholder="Ticker"
-              className="flex-1 rounded bg-slate-800 px-2 py-1"
-            />
-            <button type="submit" className="rounded bg-blue-600 px-3 py-1 hover:bg-blue-500">
-              Anadir
-            </button>
-          </form>
-          <ul className="mt-2 space-y-1 text-sm">
-            {watchlist.items.map((item) => (
-              <li key={item.symbol} className="flex items-center justify-between rounded bg-slate-800 px-2 py-1">
-                <span>{item.symbol}</span>
-                <button onClick={() => watchlist.remove(item.symbol)} className="text-xs text-red-400 hover:underline">
-                  Quitar
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <ImportPricesForm
-          symbol={symbol}
-          timeframe={timeframe}
-          onImported={({ symbol: importedSymbol, timeframe: importedTimeframe, imported }) =>
-            handleImportCompleted({ symbol: importedSymbol, timeframe: importedTimeframe, imported })
-          }
-        />
       </div>
     </div>
   );

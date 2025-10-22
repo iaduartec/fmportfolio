@@ -3,6 +3,7 @@ import { positions, prices, symbols, trades } from '@/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 import { PositionsTable } from '@/components/PositionsTable';
 import { PnLSummary } from '@/components/PnLSummary';
+import { PortfolioSidebar } from './PortfolioSidebar';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,9 +35,12 @@ export default async function PortfolioPage() {
   const totalUnrealized = enriched.reduce((acc, row) => acc + (row.unrealized ?? 0), 0);
 
   return (
-    <div className="space-y-6">
-      <PnLSummary daily={dailyPnl} unrealized={totalUnrealized} />
-      <PositionsTable positions={enriched} />
+    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="space-y-6">
+        <PnLSummary daily={dailyPnl} unrealized={totalUnrealized} />
+        <PositionsTable positions={enriched} />
+      </div>
+      <PortfolioSidebar />
     </div>
   );
 }
