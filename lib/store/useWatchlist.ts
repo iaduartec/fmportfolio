@@ -4,6 +4,15 @@ import { create } from 'zustand';
 
 export type WatchItem = { symbol: string; note?: string };
 
+export const DEFAULT_WATCHLIST_ITEMS: WatchItem[] = [
+  // [Inferencia] Utilizamos ETF e índices líquidos para representar los mercados pedidos.
+  { symbol: 'SPY' }, // S&P 500
+  { symbol: 'IBEX' }, // IBEX 35
+  { symbol: 'NYA' }, // NYSE Composite
+  { symbol: 'QQQ' }, // NASDAQ 100
+  { symbol: 'GLD' } // Oro
+];
+
 type State = {
   items: WatchItem[];
   add: (item: WatchItem) => void;
@@ -11,11 +20,7 @@ type State = {
 };
 
 export const useWatchlist = create<State>((set) => ({
-  items: [
-    { symbol: 'AAPL' },
-    { symbol: 'MSFT' },
-    { symbol: 'SPY' }
-  ],
+  items: [...DEFAULT_WATCHLIST_ITEMS],
   add: (item) =>
     set((state) => ({
       items: state.items.some((i) => i.symbol === item.symbol)
@@ -24,6 +29,6 @@ export const useWatchlist = create<State>((set) => ({
     })),
   remove: (symbol) =>
     set((state) => ({
-      items: state.items.filter((item) => item.symbol !== symbol)
+      items: state.items.filter((watchItem) => watchItem.symbol !== symbol)
     }))
 }));
