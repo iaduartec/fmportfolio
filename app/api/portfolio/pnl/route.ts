@@ -3,6 +3,8 @@ import { getDb } from '@/lib/db';
 import { trades, positions, prices } from '@/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const db = await getDb();
   const pos = await db.select().from(positions);

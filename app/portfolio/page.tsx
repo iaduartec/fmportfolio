@@ -4,6 +4,8 @@ import { eq, desc } from 'drizzle-orm';
 import { PositionsTable } from '@/components/PositionsTable';
 import { PnLSummary } from '@/components/PnLSummary';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PortfolioPage() {
   const db = await getDb();
   const rows = await db.select().from(positions);

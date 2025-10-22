@@ -2,6 +2,8 @@ import { getDb } from '@/lib/db';
 import { symbols } from '@/drizzle/schema';
 import { BacktestClient } from './BacktestClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function BacktestPage() {
   const db = await getDb();
   const allSymbols = await db.select().from(symbols);
