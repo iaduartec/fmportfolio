@@ -4,6 +4,8 @@ import { eq, desc } from 'drizzle-orm';
 import type { Candle } from './ChartClient';
 import { ChartClient } from './ChartClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ChartPage() {
   const defaultSymbol = 'AAPL';
   const db = await getDb();

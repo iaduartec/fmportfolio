@@ -3,6 +3,8 @@ import { alerts, symbols } from '@/drizzle/schema';
 import { AlertsClient } from './AlertsClient';
 import type { AlertRecord } from './AlertsClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AlertsPage() {
   const db = await getDb();
   const [alertRows, symbolRows] = await Promise.all([
