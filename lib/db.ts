@@ -111,7 +111,7 @@ export async function runMigrations() {
   await migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle/migrations') });
 }
 
-async function ensureMigrations() {
+export async function ensureMigrations() {
   if (!migrationPromise) {
     migrationPromise = (async () => {
       try {
