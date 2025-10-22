@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { prices, symbols } from '@/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 import type { Candle } from './ChartClient';
@@ -6,6 +6,7 @@ import { ChartClient } from './ChartClient';
 
 export default async function ChartPage() {
   const defaultSymbol = 'AAPL';
+  const db = await getDb();
   const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.ticker, defaultSymbol) });
   const initialCandles = symbolRow
     ? await db

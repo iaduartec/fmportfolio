@@ -1,9 +1,10 @@
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { alerts, symbols } from '@/drizzle/schema';
 import { AlertsClient } from './AlertsClient';
 import type { AlertRecord } from './AlertsClient';
 
 export default async function AlertsPage() {
+  const db = await getDb();
   const [alertRows, symbolRows] = await Promise.all([
     db.select().from(alerts),
     db.select({ ticker: symbols.ticker }).from(symbols)

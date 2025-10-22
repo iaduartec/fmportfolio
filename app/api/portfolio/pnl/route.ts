@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { trades, positions, prices } from '@/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 
 export async function GET() {
+  const db = await getDb();
   const pos = await db.select().from(positions);
   const results = [] as Array<{ symbolId: number; qty: number; avgPrice: number; marketPrice: number; unrealized: number }>;
 

@@ -1,5 +1,5 @@
 import { config } from '../config';
-import { db } from '../db';
+import { getDb } from '../db';
 import { prices, symbols } from '../../drizzle/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { parseISO } from 'date-fns';
@@ -42,6 +42,7 @@ export async function fetchOHLCV(
   end: string,
   apiKey?: string
 ) {
+  const db = await getDb();
   const key = assertApiKey(apiKey);
   await throttle();
   const mapped = timeframeMap[timeframe];
@@ -115,6 +116,7 @@ export async function getCachedOHLCV(
   from: number,
   to: number
 ) {
+  const db = await getDb();
   const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.ticker, symbol) });
   if (!symbolRow) return [];
   const rows = await db

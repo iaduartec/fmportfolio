@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { trades, symbols } from '@/drizzle/schema';
 import { recalcPositions } from '@/lib/portfolio';
 import { eq } from 'drizzle-orm';
@@ -16,6 +16,7 @@ const rowSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const db = await getDb();
   const text = await request.text();
   const rows = parse(text, { columns: true, skip_empty_lines: true });
   const parsed = z.array(rowSchema).safeParse(rows);

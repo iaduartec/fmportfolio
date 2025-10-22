@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { alerts } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
@@ -10,6 +10,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  const db = await getDb();
   const json = await request.json();
   const parsed = schema.safeParse(json);
   if (!parsed.success) {

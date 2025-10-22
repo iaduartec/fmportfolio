@@ -15,6 +15,30 @@ if (!fs.existsSync(path.dirname(databaseFile))) {
 export const sqlite = new Database(databaseFile);
 export const db = drizzle(sqlite, { schema });
 
+// Ejecutamos migraciones bajo demanda para soportar entornos efímeros (e.g. Vercel) donde el archivo SQLite
+// aún no tiene tablas creadas al momento de la importación.
+let migrationPromise: Promise<void> | null = null;
+
 export async function runMigrations() {
-  migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle/migrations') });
+  await migrate(db, { migrationsFolder: path.resolve(process.cwd(), 'drizzle/migrations') });
+}
+
+async function ensureMigrations() {
+  if (!migrationPromise) {
+    migrationPromise = (async () => {
+      try {
+        await runMigrations();
+      } catch (error) {
+        migrationPromise = null;
+        throw error;
+      }
+    })();
+  }
+
+  return migrationPromise;
+}
+
+export async function getDb() {
+  await ensureMigrations();
+  return db;
 }
