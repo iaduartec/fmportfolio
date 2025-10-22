@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chart } from '@/components/Chart';
 import { IndicatorPanel, IndicatorConfig } from '@/components/IndicatorPanel';
 import { IndicatorSummary } from '@/components/IndicatorSummary';
@@ -22,9 +22,17 @@ type Props = {
   initialSymbol: string;
   initialTimeframe: string;
   initialCandles: Candle[];
+  fallbackSymbol: string;
+  fallbackTimeframe: string;
 };
 
-export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }: Props) {
+export function ChartClient({
+  initialSymbol,
+  initialTimeframe,
+  initialCandles,
+  fallbackSymbol,
+  fallbackTimeframe
+}: Props) {
   const watchlist = useWatchlist();
   const [symbol, setSymbol] = useState(initialSymbol);
   const [timeframe, setTimeframe] = useState(initialTimeframe);
@@ -33,6 +41,7 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
   const [anchorIndex, setAnchorIndex] = useState<number>(Math.max(0, initialCandles.length - 50));
   const [newSymbol, setNewSymbol] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const fallbackAttemptedRef = useRef(false);
 
   const indicatorRequests = useMemo<IndicatorRequest[]>(() => {
     return indicators
@@ -99,6 +108,9 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
         to: to.toISOString()
       });
 
+      const isFallbackTarget =
+        targetSymbol === fallbackSymbol && targetTimeframe === fallbackTimeframe;
+
       const fetchCandles = async () => {
         const response = await fetch(`/api/quotes?${searchParams.toString()}`);
         if (!response.ok) {
@@ -123,25 +135,38 @@ export function ChartClient({ initialSymbol, initialTimeframe, initialCandles }:
             })
           });
 
-        if (refreshResponse.ok) {
-          fetchedCandles = await fetchCandles();
-        }
+          if (refreshResponse.ok) {
+            fetchedCandles = await fetchCandles();
+          }
         }
 
         if (fetchedCandles.length === 0) {
+          if (!isFallbackTarget && !fallbackAttemptedRef.current) {
+            fallbackAttemptedRef.current = true;
+            setLoadError(
+              `No se encontraron velas para ${targetSymbol} en ${targetTimeframe}. Mostrando ${fallbackSymbol} en ${fallbackTimeframe} por defecto.`
+            );
+            setSymbol(fallbackSymbol);
+            setTimeframe(fallbackTimeframe);
+            return;
+          }
+
+          fallbackAttemptedRef.current = false;
           setCandles([]);
-          setLoadError('No se encontraron velas para el simbolo y timeframe seleccionados.');
+          setLoadError(`No se encontraron velas para ${targetSymbol} en ${targetTimeframe}.`);
         } else {
+          fallbackAttemptedRef.current = false;
           setLoadError(null);
           setCandles(fetchedCandles.map((candle) => ({ ...candle })));
         }
       } catch (error) {
         console.error('Error cargando velas', error);
+        fallbackAttemptedRef.current = false;
         setCandles([]);
-        setLoadError('No se pudieron cargar velas. Revisa la conexion o importa datos.');
+        setLoadError('No se pudieron cargar velas. Revisa la conexión o intenta con otro símbolo.');
       }
     },
-    []
+    [fallbackSymbol, fallbackTimeframe]
   );
 
   useEffect(() => {
