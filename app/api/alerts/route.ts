@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { alerts, symbols } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
@@ -11,11 +11,13 @@ const createSchema = z.object({
 });
 
 export async function GET() {
+  const db = await getDb();
   const data = await db.select().from(alerts);
   return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
+  const db = await getDb();
   const json = await request.json();
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {

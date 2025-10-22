@@ -1,12 +1,16 @@
-import { db } from '../lib/db';
+import { getDb } from '../lib/db';
 import { symbols } from '../drizzle/schema';
 
 async function seed() {
-  await db.insert(symbols).values([
-    { ticker: 'AAPL', name: 'Apple Inc.', assetClass: 'Equity', currency: 'USD' },
-    { ticker: 'MSFT', name: 'Microsoft Corp.', assetClass: 'Equity', currency: 'USD' },
-    { ticker: 'SPY', name: 'SPDR S&P 500 ETF', assetClass: 'ETF', currency: 'USD' }
-  ]).onConflictDoNothing();
+  const db = await getDb();
+  await db
+    .insert(symbols)
+    .values([
+      { ticker: 'AAPL', name: 'Apple Inc.', assetClass: 'Equity', currency: 'USD' },
+      { ticker: 'MSFT', name: 'Microsoft Corp.', assetClass: 'Equity', currency: 'USD' },
+      { ticker: 'SPY', name: 'SPDR S&P 500 ETF', assetClass: 'ETF', currency: 'USD' }
+    ])
+    .onConflictDoNothing();
   console.log('Seed completado');
 }
 

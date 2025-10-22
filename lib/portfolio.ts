@@ -1,8 +1,9 @@
-import { db } from './db';
+import { getDb } from './db';
 import { positions, trades, symbols } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
 export async function recalcPositions() {
+  const db = await getDb();
   const allSymbols = await db.select().from(symbols);
   for (const symbol of allSymbols) {
     const symbolTrades = await db

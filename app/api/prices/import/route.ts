@@ -2,7 +2,7 @@ import type { RunResult } from 'better-sqlite3';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { prices, symbols } from '@/drizzle/schema';
 import { parseTradingViewCsv, TradingViewCsvError } from '@/lib/adapters/tradingview-csv';
 
@@ -13,6 +13,7 @@ const formSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const db = await getDb();
   const formData = await request.formData();
   const parsed = formSchema.safeParse({
     symbol: formData.get('symbol'),

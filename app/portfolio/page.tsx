@@ -1,10 +1,11 @@
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { positions, prices, symbols, trades } from '@/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 import { PositionsTable } from '@/components/PositionsTable';
 import { PnLSummary } from '@/components/PnLSummary';
 
 export default async function PortfolioPage() {
+  const db = await getDb();
   const rows = await db.select().from(positions);
   const enriched = await Promise.all(
     rows.map(async (position) => {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCachedOHLCV } from '@/lib/adapters/fmp';
 import { runEmaRsiBacktest } from '@/lib/backtest/emaRsi';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { backtests, symbols } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
 
@@ -22,6 +22,7 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const db = await getDb();
   const json = await request.json();
   const parsed = schema.safeParse(json);
   if (!parsed.success) {

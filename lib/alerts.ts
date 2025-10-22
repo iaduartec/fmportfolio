@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { eq, desc } from 'drizzle-orm';
-import { db } from './db';
+import { getDb } from './db';
 import { alerts, prices, symbols } from '../drizzle/schema';
 import { fetchOHLCV } from './adapters/fmp';
 import { sendAlert } from './ws';
@@ -15,6 +15,7 @@ function writeLog(message: string) {
 }
 
 export async function evaluateAlerts() {
+  const db = await getDb();
   const activeAlerts = await db.select().from(alerts).where(eq(alerts.isActive, true));
   for (const alert of activeAlerts) {
     const symbolRow = await db.query.symbols.findFirst({ where: eq(symbols.id, alert.symbolId) });
